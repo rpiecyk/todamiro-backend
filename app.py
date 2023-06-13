@@ -1,10 +1,56 @@
+#import eventlet
+#eventlet.monkey_patch()
+
 from flask import Flask, render_template, request
 from flask_cors import CORS
 from flask_socketio import SocketIO, send, emit
-from kvka import KafkaService
+#from kvka import KafkaService
+from fire import Fire
 import logging
-#import eventlet
-#eventlet.monkey_patch()
+from threading import Thread
+
+
+from kafka import KafkaProducer, KafkaAdminClient, KafkaConsumer
+from kafka.admin import NewTopic
+
+# Kafka configuration
+BOOTSTRAP_SERVERS = 'localhost:29092'
+
+
+class KafkaService:
+    def __init__(self):
+        self.topics = set()
+        self.ka = KafkaAdminClient(bootstrap_servers=BOOTSTRAP_SERVERS)
+        self.kp = KafkaProducer(bootstrap_servers=BOOTSTRAP_SERVERS)
+        self.kc = KafkaConsumer(bootstrap_servers=BOOTSTRAP_SERVERS,
+                         enable_auto_commit=False,
+                         group_id='my-group')
+
+    def create_topic(self, topic_name):
+        new_topic = NewTopic(topic_name, num_partitions=1, replication_factor=1)
+        self.ka.create_topics([new_topic])
+        self.topics.add(topic_name)
+        return topic_name
+
+    def push_message(self, topic_name, message):
+        #if topic_name not in self.topics:
+        #    return "Topic doesn't exist."
+        self.kp.send(topic_name, message.encode('utf-8'))
+        self.kp.flush()
+        return "Message sent successfully."
+
+    def consume_messages(self, topic_name, tid):
+        self.kc.subscribe([topic_name])
+        for message in self.kc:
+            v = message.value.decode('utf-8')
+            payload = {'date':1686692469940, 'email': 'mhaic@softserveinc.com', 'id': tid, 'message': v}
+            #socketio.emit('receive_messages', {'topic_name': topic_name, 'message': [message.value.decode('utf-8')]})
+            socketio.emit('receive_messages', [payload])
+
+
+from kafka import KafkaProducer, KafkaConsumer, TopicPartition
+BOOTSTRAP_SERVERS = 'localhost:29092'
+TOPIC_NAME = 'nieogladanie'
 
 FORMAT = '%(asctime)s %(message)s'
 logging.basicConfig(format=FORMAT)
@@ -15,9 +61,13 @@ app = Flask(__name__)
 CORS(app)
 app.config['SECRET_KEY'] = 'todamiro'
 #socketio = SocketIO(app,async_mode = 'eventlet')
+#socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173", logger=True, engineio_logger=True)
 socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173")
+#socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173",async_mode = 'eventlet')
 
 kafka_service = KafkaService()
+fire_base = Fire()
+
 
 @app.route('/')
 def hello_world():
@@ -33,22 +83,31 @@ def test_connect(auth):
     emit('my response', {'data': 'Connected'})
 
 
-@socketio.on('fetch_topics')
-def handle_message(data):
+topics = {}
+@socketio.on('get_topics')
+def handle_message():
     print('topics:')
+    tops = fire_base.fetch_topics()
+    print(tops)
+    for topic in tops:
+        topics[topic['id']] = topic['topic']
+    print(topics)
+    #tops = [{'slots': -4, 'date': '2023-06-13T15:01:00.312Z', 'topic': 'ogladac_slonia', 'id':1, 'slotsTaken':0,'place':'go'}]
+    #tops = []
+    emit("receive_topics", tops, broadcast=True)
 
 
-# @socketio.on('feedback')
-# def handle_message(mess):
-#     send(mess)
-
-
-@socketio.on('create_topic')
+@socketio.on('topic_created')
 def handle_create_topic(data):
-    topic_name = data['topic_name']
+    print('creating')
+    print(data)
+    topic_name = data['topic']
+    topics[data['id']] = topic_name
     created_topic = kafka_service.create_topic(topic_name)
+    fire_base.put_topic(topic_name,data)
+    print(created_topic)
     logging.info(created_topic)
-    #emit('topic_created', {'topic_name': created_topic}, broadcast=True)
+    emit('new_topic', {'topic_name': created_topic}, broadcast=True)
 
 
 messages = {}
@@ -57,8 +116,10 @@ def handle_send_message(message):
     print('tu jestem')
     existing_messages = messages.get(message["id"], [])
     messages[message["id"]] = existing_messages + [message]
-    emit("recieve_messages", messages[message["id"]], broadcast=True)
-    topic_name = "five_topic"
+    #print(messages[message["id"]])
+    emit("receive_messages", messages[message["id"]], broadcast=True)
+    topic_name = topics.get(message['id'],"five_topic")
+    print('tn:', topic_name)
     message = f"{message['email']}$${message['message']}"
     response = kafka_service.push_message(topic_name, message)
     print(response)
@@ -68,7 +129,43 @@ def handle_send_message(message):
 def handle_get_messages(data):
     print('tam jestem')
     id = data["id"]
-    emit("recieve_messages", messages.get(id, []), broadcast=True)
+    print(messages.get(id, []))
+    emit("receive_messages", messages.get(id, []), broadcast=True)
+
+
+@socketio.on('start_consumer')
+def handle_start_consumer(data):
+    print(data)
+    topic_name = 'nieogladanie' #data['topic_name']
+    tid = '9095551e-b296-4663-bd44-1563e19badd0'
+    Thread(target=kafka_service.consume_messages, args=(topic_name,tid)).start()
+
+
+# @socketio.on('kafkaconsumer')
+# def kafkaconsumer(message):
+#     consumer = KafkaConsumer(group_id='consumer-1',
+#                              bootstrap_servers=BOOTSTRAP_SERVERS)
+#     tp = TopicPartition(TOPIC_NAME, 0)
+#     print('ha1')
+#     # register to the topic
+#     consumer.assign([tp])
+
+#     # obtain the last offset value
+#     consumer.seek_to_end(tp)
+#     lastOffset = consumer.position(tp)
+#     consumer.seek_to_beginning(tp)
+#     emit('kafkaconsumer1', {'data': ''})
+#     print('ha2')
+#     for message in consumer:
+#         msg = [{'message': message.value.decode('utf-8'), 'email': 'mhaic@softserveinc.com', 'date': 1686674336650, 'id': '9095551e-b296-4663-bd44-1563e19badd0'}]
+#         print(msg)
+#         print('emitting')
+#         emit('receive_messages', msg, broadcast=True)
+#         #print(message)
+#         if message.offset == lastOffset - 1:
+#             break
+#     print('ha3')
+#     consumer.close()
 
 
 # @socketio.on('send_message')
@@ -87,4 +184,4 @@ if __name__ == '__main__':
     #socketio.init_app(app, cors_allowed_origins="*")
     #socketio.init_app(app, cors_allowed_origins=['http://localhost:5173'])
     logging.info('starting now')
-    socketio.run(app, debug=debug, port=5001)
+    socketio.run(app, debug=debug, port=3001)

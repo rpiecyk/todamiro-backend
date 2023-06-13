@@ -12,12 +12,15 @@ class Fire():
 
     def fetch_topics(self):
         users_ref = self.db.collection(TOPICS)
-        tops = users_ref.stream()
+        tops = []
+        for top in users_ref.stream():
+            tops.append(top.to_dict())
         print(tops)
         return tops
     
     def put_topic(self,name,jload):
         top_ref = self.db.collection('_topics').document(name)
+        jload['slotsTaken'] = 1
         top_ref.set(jload)
 
 

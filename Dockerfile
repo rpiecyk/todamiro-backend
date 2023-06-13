@@ -18,5 +18,5 @@ EXPOSE 5001
 
 # Run the Flask application
 #CMD ["python", "app.py"]
-RUN echo "Hello World!!"
+CMD ["echo", "siema Eniu"]
 

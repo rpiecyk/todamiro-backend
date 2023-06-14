@@ -161,7 +161,7 @@ def handle_send_message(message):
 def handle_get_messages(data):
     id = data["id"]
     #print(messages.get(id, []))
-    emit("receive_messages", messages.get(id, []))
+    emit("receive_messages", {'id':id,'messages':messages.get(id, [])})
 
 
 @socketio.on('starting_consumer')

@@ -2,7 +2,7 @@ from kafka import KafkaProducer, KafkaAdminClient, KafkaConsumer
 from kafka.admin import NewTopic
 
 # Kafka configuration
-BOOTSTRAP_SERVERS = 'localhost:29092'
+BOOTSTRAP_SERVERS = '10.0.101.20:9092'
 
 
 class KafkaService:

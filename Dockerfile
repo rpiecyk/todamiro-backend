@@ -1,6 +1,10 @@
 # Use an official Python runtime as the base image
 FROM python:3.9
 
+# Cloud Run related vars
+ENV PORT 3001
+ENV HOST 0.0.0.0
+
 # Set the working directory in the container
 WORKDIR /app
 
@@ -18,5 +22,4 @@ EXPOSE 3001
 
 # Run the Flask application
 CMD ["python", "app.py"]
-#CMD ["echo", "siema Eniu"]
 

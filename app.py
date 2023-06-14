@@ -211,11 +211,12 @@ def handle_remove_subscriber(data):
         topic_subscribers[tid] = new_subs or []
     removing = fire_base.mod_subscriber(tid,-1)
     print(removing)
+    a=1
     print(topic_subscribers)
-    emit('unsubscribed', data)
+    emit('unsubscribed', data) 
 
 
-# @socketio.on('kafkaconsumer')
+# @socketio.on('kafkaconsumer') ewfwe
 # def kafkaconsumer(message):
 #     consumer = KafkaConsumer(group_id='consumer-1',
 #                              bootstrap_servers=BOOTSTRAP_SERVERS)

@@ -85,7 +85,7 @@ CORS(app)
 app.config['SECRET_KEY'] = 'todamiro'
 #socketio = SocketIO(app,async_mode = 'eventlet')
 #socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173", logger=True, engineio_logger=True)
-socketio = SocketIO(app, cors_allowed_origins="https://be.todamiro.com")
+socketio = SocketIO(app, cors_allowed_origins="https://todamiro.com")
 #socketio = SocketIO(app, cors_allowed_origins="http://localhost:5173",async_mode = 'eventlet')
 
 kafka_service = KafkaService()

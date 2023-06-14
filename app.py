@@ -16,7 +16,7 @@ from kafka.admin import NewTopic
 
 # Kafka configuration
 #BOOTSTRAP_SERVERS = 'localhost:29092'
-BOOTSTRAP_SERVERS = '10.1.101.20:29092'
+BOOTSTRAP_SERVERS = '10.0.101.20:29092'
 WS_PORT = 3001
 
 
@@ -52,7 +52,7 @@ class KafkaService:
             print(v)
             print('__')
             v_email, v_date, v_message = v.split('$$')
-            payload = {'date':1686692469940, 'email': 'mhaic@softserveinc.com', 'id': topic_name, 'message': v}
+            payload = {'date':1686692469940, 'email': '@softserveinc.com', 'id': topic_name, 'message': v}
             #socketio.emit('receive_messages', {'topic_name': topic_name, 'message': [message.value.decode('utf-8')]})
             socketio.emit('receive_message', [payload])
 
@@ -69,7 +69,7 @@ class KafkaConsumerThread(Thread):
         self.consumer.subscribe([self.topic_name])
         for message in self.consumer:
             v = message.value.decode('utf-8')
-            payload = {'date':1686692469940, 'email': 'mhaic@softserveinc.com', 'id': self.topic_name, 'message': v}
+            payload = {'date':1686692469940, 'email': '@softserveinc.com', 'id': self.topic_name, 'message': v}
             print('im in run')
             print(payload)
             socketio.emit('receive_message', [payload])
@@ -125,7 +125,7 @@ def handle_message(data):
     print(topic_subscribers)
     tops['subscribed'] = int(data['email'] in topic_subscribers.get(tid,[]))
     print(tops)
-    tops['slotsTaken'] = min(tops['slotsTaken'],tops['slots'])
+    tops['slotsTaken'] = min(tops.get('slotsTaken',10000),tops['slots'])
     emit("receive_topic", tops, broadcast=True)
 
 

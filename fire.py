@@ -11,27 +11,35 @@ class Fire():
         self.db = firestore.client()
 
     def fetch_topics(self):
-        users_ref = self.db.collection(TOPICS)
+        tops_ref = self.db.collection(TOPICS)
         tops = []
-        for top in users_ref.stream():
+        for top in tops_ref.stream():
             tops.append(top.to_dict())
         print(tops)
         return tops
     
     def fetch_topic(self, tid):
-        users_ref = self.db.collection(TOPICS)
+        tops_ref = self.db.collection(TOPICS)
         tops = []
-        for top in users_ref.stream():
+        for top in tops_ref.stream():
             tdict = top.to_dict()
             if tdict['id'] == tid:
-                tops.append(tdict)
-        print(tops)
-        return tops
+                return tdict
+        return {}
 
     def put_topic(self,name,jload):
         top_ref = self.db.collection('_topics').document(name)
         jload['slotsTaken'] = 1
         top_ref.set(jload)
+    
+    def add_subscriber(self,tid):
+        doc_ref = self.db.collection(TOPICS).document(tid)
+        doc = doc_ref.get()
+        if doc.exists:
+            ddict = doc.to_dict()
+            dslots = ddict['slotsTaken']
+            self.db.collection(TOPICS).document(tid).update({'slotsTaken':dslots+1})
+        return True
 
 
 # cols = db.collections()

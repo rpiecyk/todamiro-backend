@@ -14,9 +14,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the Flask application port
-EXPOSE 5001
+EXPOSE 3001
 
 # Run the Flask application
-#CMD ["python", "app.py"]
-CMD ["echo", "siema Eniu"]
+CMD ["python", "app.py"]
+#CMD ["echo", "siema Eniu"]
 

@@ -27,10 +27,3 @@ class KafkaService:
         self.kp.send(topic_name, message.encode('utf-8'))
         self.kp.flush()
         return "Message sent successfully."
-
-    def consume_messages(self, topic_name):
-        self.kc.subscribe([topic_name])
-
-        for message in self.kc:
-            socketio.emit('new_message', {'topic_name': topic_name, 'message': message.value.decode('utf-8')},
-                          broadcast=True)

@@ -29,7 +29,7 @@ class Fire():
 
     def put_topic(self,name,jload):
         top_ref = self.db.collection('_topics').document(name)
-        jload['slotsTaken'] = 1
+        jload['slotsTaken'] = 0
         top_ref.set(jload)
     
     def mod_subscriber(self,tid,sign):

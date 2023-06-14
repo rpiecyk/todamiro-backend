@@ -8,6 +8,9 @@ ENV HOST 0.0.0.0
 # Set the working directory in the container
 WORKDIR /app
 
+ENV PORT 3001
+ENV HOST 0.0.0.0
+
 # Copy the requirements file into the container
 COPY requirements.txt .
 
@@ -21,4 +24,5 @@ COPY . .
 EXPOSE 3001
 
 # Run the Flask application
-CMD python3 app.py --port=$PORT
+CMD python app.py --port=$PORT --host=HOST
+

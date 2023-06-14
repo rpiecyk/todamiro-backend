@@ -32,13 +32,13 @@ class Fire():
         jload['slotsTaken'] = 1
         top_ref.set(jload)
     
-    def add_subscriber(self,tid):
+    def mod_subscriber(self,tid,sign):
         doc_ref = self.db.collection(TOPICS).document(tid)
         doc = doc_ref.get()
         if doc.exists:
             ddict = doc.to_dict()
             dslots = ddict['slotsTaken']
-            self.db.collection(TOPICS).document(tid).update({'slotsTaken':dslots+1})
+            self.db.collection(TOPICS).document(tid).update({'slotsTaken':dslots+sign})
         return True
 
 

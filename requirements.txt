@@ -2,4 +2,4 @@ flask
 flask_cors
 flask_socketio
 firebase_admin
-kafka
+kafka-python

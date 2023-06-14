@@ -15,7 +15,8 @@ from kafka import KafkaProducer, KafkaAdminClient, KafkaConsumer
 from kafka.admin import NewTopic
 
 # Kafka configuration
-BOOTSTRAP_SERVERS = '10.1.101.20:9092'
+BOOTSTRAP_SERVERS = 'localhost:9092'
+#BOOTSTRAP_SERVERS = '10.1.101.20:9092'
 WS_PORT = 3001
 
 
@@ -73,10 +74,6 @@ class KafkaConsumerThread(Thread):
             print(payload)
             socketio.emit('receive_message', [payload])
 
-
-from kafka import KafkaProducer, KafkaConsumer, TopicPartition
-BOOTSTRAP_SERVERS = '10.0.101.20:9092'
-TOPIC_NAME = 'nieogladanie'
 
 FORMAT = '%(asctime)s %(message)s'
 logging.basicConfig(format=FORMAT)
@@ -167,7 +164,7 @@ def handle_get_messages(data):
     emit("receive_messages", messages.get(id, []), broadcast=True)
 
 
-@socketio.on('start_consumer')
+@socketio.on('starting_consumer')
 def handle_start_consumer(data):
     print(f"starting consumer for {data['id']}")
     #jdata = json.loads(data.replace("'",'"'))
@@ -198,8 +195,24 @@ def handle_add_subscriber(data):
     subscribers.append(data['email'])
     topic_subscribers[data['id']] = subscribers
 
-    adding = fire_base.add_subscriber(tid)
-    print(adding) 
+    adding = fire_base.mod_subscriber(tid,1)
+    print(adding)
+    emit('subscribed', data, broadcast=True)
+
+
+@socketio.on('unsubscribe')
+def handle_remove_subscriber(data):
+    print('unsubscribing')
+    tid = data['id']
+    usr = data['email']
+    subs = topic_subscribers.get(tid)
+    if subs and usr in subs:
+        new_subs = subs.remove(usr)
+        topic_subscribers[tid] = new_subs or []
+    removing = fire_base.mod_subscriber(tid,-1)
+    print(removing)
+    print(topic_subscribers)
+    emit('unsubscribed', data)
 
 
 # @socketio.on('kafkaconsumer')
@@ -245,4 +258,4 @@ if __name__ == '__main__':
     #socketio.init_app(app, cors_allowed_origins="*")
     #socketio.init_app(app, cors_allowed_origins=['http://localhost:5173'])
     logging.info('starting now')
-    socketio.run(app, debug=debug)
+    socketio.run(app, debug=debug, host='0.0.0.0', port=WS_PORT)

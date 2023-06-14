@@ -21,5 +21,4 @@ COPY . .
 EXPOSE 3001
 
 # Run the Flask application
-CMD ["python", "app.py"]
-
+CMD python3 app.py --port=$PORT

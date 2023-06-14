@@ -3,3 +3,5 @@ flask_cors
 flask_socketio
 firebase_admin
 kafka-python
+eventlet==0.30.2
+gunicorn

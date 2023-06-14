@@ -149,7 +149,7 @@ def handle_send_message(message):
     existing_messages = messages.get(message["id"], [])
     messages[message["id"]] = existing_messages + [message]
     #print(messages[message["id"]])
-    emit("receive_messages", {'id':message["id"],'messages':messages[message["id"]]})
+    emit("receive_messages", {'id':message["id"],'messages':messages[message["id"]]}, broadcast=True)
     topic_name = message['id']
     #print('tn:', topic_name)
     message = f"{message['email']}$${message['date']}$${message['message']}"
@@ -161,7 +161,7 @@ def handle_send_message(message):
 def handle_get_messages(data):
     id = data["id"]
     #print(messages.get(id, []))
-    emit("receive_messages", {'id':id,'messages':messages.get(id, [])})
+    emit("receive_messages", {'id':id,'messages':messages.get(id, [])}, broadcast=True)
 
 
 @socketio.on('starting_consumer')

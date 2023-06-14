@@ -245,4 +245,4 @@ if __name__ == '__main__':
     #socketio.init_app(app, cors_allowed_origins="*")
     #socketio.init_app(app, cors_allowed_origins=['http://localhost:5173'])
     logging.info('starting now')
-    socketio.run(app, debug=debug, port=WS_PORT)
+    socketio.run(app, debug=debug)

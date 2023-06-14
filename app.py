@@ -7,6 +7,7 @@ from flask_socketio import SocketIO, send, emit
 #from kvka import KafkaService
 from fire import Fire
 import logging
+import json
 from threading import Thread
 
 
@@ -39,13 +40,17 @@ class KafkaService:
         self.kp.flush()
         return "Message sent successfully."
 
-    def consume_messages(self, topic_name, tid):
+    def consume_messages(self, topic_name):
         self.kc.subscribe([topic_name])
         for message in self.kc:
             v = message.value.decode('utf-8')
-            payload = {'date':1686692469940, 'email': 'mhaic@softserveinc.com', 'id': tid, 'message': v}
+            print('__')
+            print(topic_name)
+            print(v)
+            print('__')
+            payload = {'date':1686692469940, 'email': 'mhaic@softserveinc.com', 'id': topic_name, 'message': v}
             #socketio.emit('receive_messages', {'topic_name': topic_name, 'message': [message.value.decode('utf-8')]})
-            socketio.emit('receive_messages', [payload])
+            socketio.emit('receive_message', [payload])
 
 
 from kafka import KafkaProducer, KafkaConsumer, TopicPartition
@@ -89,25 +94,31 @@ def handle_message():
     print('topics:')
     tops = fire_base.fetch_topics()
     print(tops)
-    for topic in tops:
-        topics[topic['id']] = topic['topic']
-    print(topics)
     #tops = [{'slots': -4, 'date': '2023-06-13T15:01:00.312Z', 'topic': 'ogladac_slonia', 'id':1, 'slotsTaken':0,'place':'go'}]
-    #tops = []
     emit("receive_topics", tops, broadcast=True)
+
+
+topics = {}
+@socketio.on('get_topic')
+def handle_message(data):
+    print('topic:')
+    tid = data['id']
+    tops = fire_base.fetch_topic(tid)
+    emit("receive_topic", tops, broadcast=True)
 
 
 @socketio.on('topic_created')
 def handle_create_topic(data):
     print('creating')
+    data['slotsTaken'] = 0
     print(data)
-    topic_name = data['topic']
-    topics[data['id']] = topic_name
+    topic_name = data['id']
+    topics[data['id']] = 1
     created_topic = kafka_service.create_topic(topic_name)
     fire_base.put_topic(topic_name,data)
     print(created_topic)
     logging.info(created_topic)
-    emit('new_topic', {'topic_name': created_topic}, broadcast=True)
+    emit('new_topic', data, broadcast=True)
 
 
 messages = {}
@@ -118,9 +129,9 @@ def handle_send_message(message):
     messages[message["id"]] = existing_messages + [message]
     #print(messages[message["id"]])
     emit("receive_messages", messages[message["id"]], broadcast=True)
-    topic_name = topics.get(message['id'],"five_topic")
+    topic_name = message['id']
     print('tn:', topic_name)
-    message = f"{message['email']}$${message['message']}"
+    message = f"{message['email']}$${message['date']}$${message['message']}"
     response = kafka_service.push_message(topic_name, message)
     print(response)
 
@@ -135,10 +146,13 @@ def handle_get_messages(data):
 
 @socketio.on('start_consumer')
 def handle_start_consumer(data):
-    print(data)
-    topic_name = 'nieogladanie' #data['topic_name']
-    tid = '9095551e-b296-4663-bd44-1563e19badd0'
-    Thread(target=kafka_service.consume_messages, args=(topic_name,tid)).start()
+    #jdata = json.loads(data.replace("'",'"'))
+    #topic_name = 'nieogladanie' #data['topic_name']
+    topic_name = data['id']#'9095551e-b296-4663-bd44-1563e19badd0'
+    try:
+        a=1#Thread(target=kafka_service.consume_messages, args=(topic_name,)).start()
+    except ValueError:
+        logging.warning('executor already running')
 
 
 # @socketio.on('kafkaconsumer')

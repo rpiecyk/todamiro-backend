@@ -18,6 +18,16 @@ class Fire():
         print(tops)
         return tops
     
+    def fetch_topic(self, tid):
+        users_ref = self.db.collection(TOPICS)
+        tops = []
+        for top in users_ref.stream():
+            tdict = top.to_dict()
+            if tdict['id'] == tid:
+                tops.append(tdict)
+        print(tops)
+        return tops
+
     def put_topic(self,name,jload):
         top_ref = self.db.collection('_topics').document(name)
         jload['slotsTaken'] = 1
